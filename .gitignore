@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+*.log
+
+# local iteration screenshots and the old report template
+shots/
+report/
+
+# Vite intermediate output (the single-file build is kept)
+dist/index.html
+dist/assets/

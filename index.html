@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#05070a" />
+<title>Element Atlas 118 · 赛博元素周期表</title>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene" aria-label="118 元素周期表 3D"></canvas>
+
+  <div class="hud" id="hud">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><i></i><i></i><i></i></div>
+        <div class="brand-txt">
+          <h1>ELEMENT <span>ATLAS</span> <em>118</em></h1>
+          <p>赛博元素周期表 <em>/ 118 ELEMENTS</em></p>
+        </div>
+      </div>
+
+      <nav class="modes" id="modes" role="tablist" aria-label="模式">
+        <button class="mode is-active" data-mode="periodic" role="tab"><span class="mi">⬡</span><b>元素周期表</b></button>
+        <button class="mode" data-mode="atom" role="tab"><span class="mi">⌕</span><b>剖析</b></button>
+      </nav>
+    </header>
+
+    <aside class="inspector" id="inspector" hidden>
+      <button class="insp-close" id="insp-close" aria-label="关闭">×</button>
+      <div class="insp-head">
+        <div class="insp-z" id="insp-z">10</div>
+        <div class="insp-sym" id="insp-sym">Ne</div>
+        <div class="insp-name"><b id="insp-zh">氖</b><span id="insp-en">NEON</span></div>
+      </div>
+      <div class="insp-cat" id="insp-cat">稀有气体</div>
+      <div class="detail-toggle" id="detail-toggle"><span>ATOM VIEW</span><button data-detail="structure" class="on">结构</button><button data-detail="glow">辉光</button></div>
+      <div class="insp-quote" id="insp-quote"></div>
+      <dl class="insp-grid">
+        <div><dt>相对原子质量</dt><dd id="insp-mass">20.180</dd></div>
+        <div><dt>族 / 周期</dt><dd id="insp-pos">18 / 2</dd></div>
+        <div class="wide"><dt>电子排布</dt><dd id="insp-cfg">1s² 2s² 2p⁶</dd></div>
+        <div class="wide"><dt>壳层</dt><dd id="insp-shells">2 · 8</dd></div>
+      </dl>
+      <div class="insp-spec">
+        <div class="insp-spec-head"><span>特征发射光谱</span><em id="insp-spec-tag">实测主谱线</em></div>
+        <canvas id="insp-spectrum" width="680" height="150"></canvas>
+        <div class="insp-spec-vals" id="insp-spec-vals"></div>
+      </div>
+      <div class="insp-step">
+        <button class="step-btn" id="insp-prev" data-step="-1" title="上一个元素（←）">
+          <span>←</span><b id="insp-prev-sym">Mn</b><em id="insp-prev-z">25</em>
+        </button>
+        <button class="step-btn next" id="insp-next" data-step="1" title="下一个元素（→）">
+          <em id="insp-next-z">27</em><b id="insp-next-sym">Co</b><span>→</span>
+        </button>
+      </div>
+      <button class="insp-back" id="insp-back">← 返回元素周期表</button>
+    </aside>
+
+    <aside class="analysis" id="analysis" hidden>
+      <div class="an-head" id="an-head" title="点击放大 / 收起">
+        <span>ATOMIC PROFILE</span>
+        <span id="an-z">Z 010</span>
+        <button class="an-expand" id="an-expand" title="放大" aria-label="放大">⤢</button>
+      </div>
+      <div class="an-sec">
+        <div class="an-title">NUCLEUS <em>原子核 · 密堆积示意</em></div>
+        <div class="nuc-row"><span>质子 <b id="an-protons">10</b></span><span>中子 <b id="an-neutrons">10</b></span><span>电子 <b id="an-electrons">10</b></span></div>
+        <div class="nuc-legend"><i class="p"></i>质子 <i class="n"></i>中子</div>
+      </div>
+      <div class="an-sec">
+        <div class="an-title">SHELLS <em>电子壳层</em></div>
+        <div class="shells" id="an-shells"></div>
+      </div>
+      <div class="an-sec">
+        <div class="an-title">PHYSICAL <em>物理性质</em></div>
+        <dl class="an-grid">
+          <div><dt>区块</dt><dd id="an-block">—</dd></div>
+          <div><dt>相态</dt><dd id="an-phase">—</dd></div>
+          <div><dt>密度</dt><dd id="an-density">—</dd></div>
+          <div><dt>熔点</dt><dd id="an-melt">—</dd></div>
+          <div><dt>沸点</dt><dd id="an-boil">—</dd></div>
+          <div><dt>电负性</dt><dd id="an-en">—</dd></div>
+          <div><dt>氧化态</dt><dd id="an-ox">—</dd></div>
+          <div><dt>原子半径</dt><dd id="an-radius">—</dd></div>
+          <div><dt>发现</dt><dd id="an-year">—</dd></div>
+          <div><dt>地壳丰度</dt><dd id="an-ab">—</dd></div>
+        </dl>
+      </div>
+      <div class="an-sec">
+        <div class="an-title">COMPOUNDS <em>常见化合物</em></div>
+        <div class="compounds" id="an-compounds"></div>
+      </div>
+      <div class="an-sec">
+        <div class="an-title">REACTION <em>特征反应</em></div>
+        <div class="reaction" id="an-reaction"></div>
+      </div>
+      <div class="an-note" id="an-note">部分超重元素的物性为预测或未知，以 — 表示。</div>
+    </aside>
+
+    <aside class="analysis-big" id="analysis-big" hidden></aside>
+
+    <div class="atom-caption" id="atom-caption">
+      <div class="ac-main"><b id="ac-sym">Fe</b><span id="ac-name">铁 · IRON</span><em>BOHR 示意模型</em></div>
+      <div class="ac-row">
+        <span class="ac-item"><i class="p"></i>质子 <b id="ac-p">26</b></span>
+        <span class="ac-item"><i class="n"></i>中子 <b id="ac-n">30</b></span>
+        <span class="ac-item"><i class="e"></i>电子 <b id="ac-e">26</b></span>
+        <span class="ac-shells" id="ac-shells">K 2 · L 8 · M 14 · N 2</span>
+        <button class="pause-btn" id="btn-pause" title="暂停电子轨道" aria-label="暂停电子轨道" aria-pressed="false">⏸</button>
+      </div>
+      <div class="ac-note" id="ac-note">电子层 / 核子数按元素数据计算 · 核子为密堆积示意 · 轨道为玻尔示意，并非真实量子轨道</div>
+    </div>
+
+    <div class="atlas-tip" id="atlas-tip" hidden>
+      <div class="tip-head">
+        <div class="tip-z" id="tip-z">Z 026</div>
+        <div class="tip-sym" id="tip-sym">Fe</div>
+        <div class="tip-name"><b id="tip-zh">铁</b><span id="tip-en">IRON</span></div>
+      </div>
+      <div class="tip-cat" id="tip-cat">过渡金属</div>
+      <div class="tip-grid">
+        <div><span>相对原子质量</span><b id="tip-mass">55.845</b></div>
+        <div><span>族 / 周期</span><b id="tip-pos">8 / 4</b></div>
+      </div>
+      <div class="tip-lines" id="tip-lines"></div>
+      <div class="tip-hint">点击打开元素剖析 →</div>
+    </div>
+
+    <div class="atlas-legend" id="atlas-legend" aria-hidden="true"></div>
+    <div class="hint" id="hint"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <div class="boot" id="boot">
+    <div class="boot-inner">
+      <div class="boot-mark">118</div>
+      <div class="boot-title">ELEMENT ATLAS</div>
+      <div class="boot-bar"><i id="boot-bar"></i></div>
+      <div class="boot-step" id="boot-step">初始化 WebGL 渲染管线…</div>
+    </div>
+  </div>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

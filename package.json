@@ -1,0 +1,24 @@
+{
+  "name": "element-atlas-118",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "A fully offline 3D periodic table and atomic profile built with Three.js — 118 elements, Bohr models, spectra, properties.",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5183",
+    "build": "vite build && node scripts/inline.mjs",
+    "preview": "vite preview --port 5184"
+  },
+  "dependencies": {
+    "three": "0.169.0"
+  },
+  "devDependencies": {
+    "vite": "5.4.10"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mxppxm/element-atlas-118.git"
+  },
+  "homepage": "https://github.com/mxppxm/element-atlas-118#readme"
+}
