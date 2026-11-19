@@ -197,22 +197,69 @@ const ORBITALS = [
 const SUP = { 0:'⁰',1:'¹',2:'²',3:'³',4:'⁴',5:'⁵',6:'⁶',7:'⁷',8:'⁸',9:'⁹' };
 const sup = n => String(n).split('').map(c => SUP[c] || c).join('');
 
-export function electronConfig(z) {
-  let left = z;
-  const parts = [];
-  const shell = [0, 0, 0, 0, 0, 0, 0];
+/* Ground-state exceptions to the Madelung order (NIST). Each entry
+   moves electrons between subshells relative to the aufbau filling. */
+const CONFIG_EXCEPTIONS = {
+  24: { '4s': -1, '3d': 1 },  29: { '4s': -1, '3d': 1 },
+  41: { '5s': -1, '4d': 1 },  42: { '5s': -1, '4d': 1 },
+  44: { '5s': -1, '4d': 1 },  45: { '5s': -1, '4d': 1 },
+  46: { '5s': -2, '4d': 2 },  47: { '5s': -1, '4d': 1 },
+  57: { '4f': -1, '5d': 1 },  58: { '4f': -1, '5d': 1 },
+  64: { '4f': -1, '5d': 1 },  78: { '6s': -1, '5d': 1 },
+  79: { '6s': -1, '5d': 1 },  89: { '5f': -1, '6d': 1 },
+  90: { '5f': -2, '6d': 2 },  91: { '5f': -1, '6d': 1 },
+  92: { '5f': -1, '6d': 1 },  93: { '5f': -1, '6d': 1 },
+  96: { '5f': -1, '6d': 1 },  103: { '6d': -1, '7p': 1 },
+};
+
+const _configCache = new Map();
+const NOBLE_CORES = [[86, 'Rn'], [54, 'Xe'], [36, 'Kr'], [18, 'Ar'], [10, 'Ne'], [2, 'He']];
+const L_ORDER = { s: 0, p: 1, d: 2, f: 3 };
+
+/* Noble-gas shorthand, valence subshells ordered by n then l: [Ar] 3d¹⁰ 4s¹ */
+function shortConfig(z, occ) {
+  const core = NOBLE_CORES.find(([cz]) => cz < z);
+  if (!core) return [...occ].filter(([, n]) => n > 0).map(([k, n]) => k + sup(n)).join(' ');
+  const coreOcc = new Map();
+  let left = core[0];
   for (const [name, cap] of ORBITALS) {
     if (left <= 0) break;
     const n = Math.min(cap, left);
     left -= n;
-    parts.push(name + sup(n));
-    const idx = parseInt(name[0], 10) - 1;
-    shell[idx] += n;
+    coreOcc.set(name, n);
   }
-  return {
-    config: parts.join(' '),
-    shells: shell.filter((n, i) => n > 0 || i === 0),
-  };
+  const rest = [...occ]
+    .map(([k, n]) => [k, n - (coreOcc.get(k) || 0)])
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => (+a[0][0] - +b[0][0]) || (L_ORDER[a[0][1]] - L_ORDER[b[0][1]]));
+  return `[${core[1]}] ` + rest.map(([k, n]) => k + sup(n)).join(' ');
+}
+
+export function electronConfig(z) {
+  if (_configCache.has(z)) return _configCache.get(z);
+  const occ = new Map();
+  let left = z;
+  for (const [name, cap] of ORBITALS) {
+    if (left <= 0) break;
+    const n = Math.min(cap, left);
+    left -= n;
+    occ.set(name, n);
+  }
+  const fix = CONFIG_EXCEPTIONS[z];
+  if (fix) for (const [name, d] of Object.entries(fix)) occ.set(name, (occ.get(name) || 0) + d);
+  const parts = [];
+  const shell = [0, 0, 0, 0, 0, 0, 0];
+  for (const [name] of ORBITALS) {
+    const n = occ.get(name) || 0;
+    if (n <= 0) continue;
+    parts.push(name + sup(n));
+    shell[parseInt(name[0], 10) - 1] += n;
+  }
+  let last = shell.length - 1;
+  while (last > 0 && shell[last] === 0) last--;
+  const res = { config: parts.join(' '), short: shortConfig(z, occ), shells: shell.slice(0, last + 1), exception: !!fix };
+  _configCache.set(z, res);
+  return res;
 }
 
 /* ---------------- wavelength → RGB ---------------- */

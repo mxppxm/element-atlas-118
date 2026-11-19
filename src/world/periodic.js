@@ -15,6 +15,12 @@ const R = 16;
 const DTHETA = 0.0612;
 const ROW_PITCH = 1.2;
 
+const _mat = new THREE.Matrix4();
+const _pos = new THREE.Vector3();
+const _quat = new THREE.Quaternion();
+const _scale = new THREE.Vector3();
+const _up = new THREE.Vector3(0, 1, 0);
+
 function roundedRect(ctx, px, py, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(px + r, py);
@@ -568,16 +574,13 @@ export class PeriodicWall {
   updateMatrix(i) {
     const md = this.meta[i];
     const d = this.instanceData[i];
-    const m = new THREE.Matrix4();
-    const pos = md.pos.clone();
     const p = d.p;
-    pos.y += (1 - p) * -1.4;
+    _pos.copy(md.pos);
+    _pos.y += (1 - p) * -1.4;
     const s = (0.9 + 0.1 * p) * (1 + d.hover * 0.07);
-    m.compose(
-      pos,
-      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), md.rot + (1 - p) * 0.12),
-      new THREE.Vector3(s, s, s),
-    );
-    this.mesh.setMatrixAt(i, m);
+    _quat.setFromAxisAngle(_up, md.rot + (1 - p) * 0.12);
+    _scale.set(s, s, s);
+    _mat.compose(_pos, _quat, _scale);
+    this.mesh.setMatrixAt(i, _mat);
   }
 }

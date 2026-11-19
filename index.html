@@ -20,6 +20,13 @@
         </div>
       </div>
 
+      <div class="search" id="search">
+        <span class="search-ico" aria-hidden="true">⌕</span>
+        <input id="search-input" type="search" autocomplete="off" spellcheck="false" placeholder="搜索元素  Fe / 铁 / iron / 26" aria-label="搜索元素" />
+        <kbd>/</kbd>
+        <ul class="search-list" id="search-list" role="listbox" hidden></ul>
+      </div>
+
       <nav class="modes" id="modes" role="tablist" aria-label="模式">
         <button class="mode is-active" data-mode="periodic" role="tab"><span class="mi">⬡</span><b>元素周期表</b></button>
         <button class="mode" data-mode="atom" role="tab"><span class="mi">⌕</span><b>剖析</b></button>
@@ -34,7 +41,7 @@
         <div class="insp-name"><b id="insp-zh">氖</b><span id="insp-en">NEON</span></div>
       </div>
       <div class="insp-cat" id="insp-cat">稀有气体</div>
-      <div class="detail-toggle" id="detail-toggle"><span>ATOM VIEW</span><button data-detail="structure" class="on">结构</button><button data-detail="glow">辉光</button></div>
+      <div class="detail-toggle" id="detail-toggle"><span>ATOM VIEW</span><button data-detail="structure">结构</button><button data-detail="glow" class="on">辉光</button></div>
       <div class="insp-quote" id="insp-quote"></div>
       <dl class="insp-grid">
         <div><dt>相对原子质量</dt><dd id="insp-mass">20.180</dd></div>
@@ -55,6 +62,7 @@
           <em id="insp-next-z">27</em><b id="insp-next-sym">Co</b><span>→</span>
         </button>
       </div>
+      <button class="insp-more" id="insp-more">查看完整档案</button>
       <button class="insp-back" id="insp-back">← 返回元素周期表</button>
     </aside>
 

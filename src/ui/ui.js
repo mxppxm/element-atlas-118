@@ -1,5 +1,5 @@
 import {
-  byZ, CATEGORIES, electronConfig, spectrumOf, wavelengthToRGB, rgbCss,
+  ELEMENTS, byZ, CATEGORIES, electronConfig, spectrumOf, wavelengthToRGB, rgbCss,
   PHYS, blockOf, phaseOf, isSynthetic, noteOf, COMPOUNDS, REACTIONS,
 } from '../data/elements.js';
 
@@ -33,6 +33,8 @@ export class UI {
     document.getElementById('insp-close').addEventListener('click', () => this.app.backToPeriodic());
     document.getElementById('insp-back').addEventListener('click', () => this.app.backToPeriodic());
     document.getElementById('btn-pause').addEventListener('click', () => this.app.toggleAtomPause());
+    document.getElementById('insp-more').addEventListener('click', () => this.openBig());
+    this.bindSearch();
     document.addEventListener('click', (e) => {
       const b = e.target.closest('[data-step]');
       if (!b || b.disabled) return;
@@ -52,7 +54,65 @@ export class UI {
     ).join('');
   }
 
-  setSpectrumPanelVisible() {}
+  /* ------------------------------ search ------------------------------ */
+  bindSearch() {
+    const input = document.getElementById('search-input');
+    const list = document.getElementById('search-list');
+    if (!input || !list) return;
+    this.searchHits = [];
+    this.searchIdx = 0;
+    const render = () => {
+      const hits = searchElements(input.value);
+      this.searchHits = hits;
+      this.searchIdx = 0;
+      if (!hits.length) {
+        list.innerHTML = input.value.trim() ? '<li class="empty">没有匹配的元素</li>' : '';
+        list.hidden = !input.value.trim();
+        return;
+      }
+      list.innerHTML = hits.map((el, i) => {
+        const c = CATEGORIES[el.cat].color;
+        return `<li role="option" data-z="${el.z}" class="${i === 0 ? 'on' : ''}" style="--c:${c}">`
+          + `<em>${el.z}</em><b>${el.sym}</b><span>${el.zh}</span><i>${el.en}</i></li>`;
+      }).join('');
+      list.hidden = false;
+    };
+    const highlight = () => {
+      list.querySelectorAll('li[data-z]').forEach((li, i) => li.classList.toggle('on', i === this.searchIdx));
+    };
+    const pick = (z) => {
+      const el = byZ[z];
+      if (!el) return;
+      input.value = '';
+      list.hidden = true;
+      input.blur();
+      this.app.openElement(el);
+    };
+    input.addEventListener('input', render);
+    input.addEventListener('focus', () => { if (input.value.trim()) render(); });
+    input.addEventListener('blur', () => setTimeout(() => { list.hidden = true; }, 120));
+    input.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      const n = this.searchHits.length;
+      if (e.key === 'ArrowDown' && n) { e.preventDefault(); this.searchIdx = (this.searchIdx + 1) % n; highlight(); }
+      else if (e.key === 'ArrowUp' && n) { e.preventDefault(); this.searchIdx = (this.searchIdx - 1 + n) % n; highlight(); }
+      else if (e.key === 'Enter' && n) { e.preventDefault(); pick(this.searchHits[this.searchIdx].z); }
+      else if (e.key === 'Escape') { input.value = ''; list.hidden = true; input.blur(); }
+    });
+    list.addEventListener('mousedown', (e) => {
+      const li = e.target.closest('li[data-z]');
+      if (!li) return;
+      e.preventDefault();
+      pick(Number(li.dataset.z));
+    });
+    addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== input && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        input.focus();
+        input.select();
+      }
+    });
+  }
 
   showAtlasTip(el, p) {
     const tip = document.getElementById('atlas-tip');
@@ -73,7 +133,7 @@ export class UI {
     document.getElementById('tip-pos').textContent = `${el.group} / ${el.period}`;
     document.getElementById('tip-lines').textContent =
       `${spec.real ? '主谱线' : '模拟谱线'} ` + top.map(l => l.nm.toFixed(1)).join(' · ') + ' nm';
-    const w = 262, h = 222;
+    const w = tip.offsetWidth || 290, h = tip.offsetHeight || 250;
     let x = p.x + 20;
     let y = p.y + 16;
     if (x + w > innerWidth - 10) x = p.x - w - 20;
@@ -169,7 +229,9 @@ export class UI {
     document.getElementById('insp-quote').textContent = noteOf(el);
     document.getElementById('insp-mass').textContent = el.mass;
     document.getElementById('insp-pos').textContent = `${el.group} / ${el.period}`;
-    document.getElementById('insp-cfg').textContent = cfg.config;
+    const cfgEl = document.getElementById('insp-cfg');
+    cfgEl.textContent = cfg.short;
+    cfgEl.title = cfg.config;
     document.getElementById('insp-shells').textContent = cfg.shells.join(' · ');
     document.getElementById('insp-spec-tag').textContent = spec.real ? '实测主谱线' : '模拟谱线';
     this.drawSpectrum(this.inspSpectrum, spec);
@@ -177,7 +239,6 @@ export class UI {
     document.getElementById('insp-spec-vals').innerHTML =
       top.map((l, i) => `<span><b style="opacity:${i === 0 ? 1 : .8}">${l.nm.toFixed(1)}</b> nm</span>`).join('');
 
-    this.closeBig();
     panel.style.setProperty('--el', cat.color);
     const smallIcon = document.getElementById('an-expand');
     if (smallIcon) { smallIcon.textContent = '⤢'; smallIcon.title = '放大'; }
@@ -283,8 +344,8 @@ export class UI {
     x.clearRect(0, 0, w, h);
     const padL = 4, padR = 4;
     const barW = w - padL - padR;
-    const barY = h * 0.44;
-    const barH = Math.max(18, h * 0.34);
+    const barY = Math.round(h * 0.36);
+    const barH = Math.max(20, Math.round(h * 0.4));
     const lo = 380, hi = 720;
     const map = (nm) => padL + ((Math.max(lo, Math.min(hi, nm)) - lo) / (hi - lo)) * barW;
 
@@ -296,14 +357,14 @@ export class UI {
     x.strokeStyle = 'rgba(130,210,255,.12)';
     x.strokeRect(padL + .5, barY + .5, barW - 1, barH - 1);
 
-    x.font = '7.5px "SFMono-Regular",Menlo,monospace';
+    x.font = '10px "SFMono-Regular",Menlo,monospace';
     x.fillStyle = 'rgba(120,150,170,.55)';
     x.textAlign = 'center';
     [400, 500, 600, 700].forEach(nm => {
       const px = map(nm);
       x.beginPath(); x.moveTo(px, barY); x.lineTo(px, barY + barH);
       x.strokeStyle = 'rgba(120,200,255,.07)'; x.stroke();
-      x.fillText(String(nm), px, barY + barH + 10);
+      x.fillText(String(nm), px, barY + barH + 12);
     });
 
     const lines = spec.lines.filter(l => l.nm >= lo && l.nm <= hi);
@@ -337,12 +398,12 @@ export class UI {
     let row = 0;
     lines.slice().sort((a, b) => b.i - a.i).slice(0, 4).forEach(l => {
       const px = map(l.nm);
-      if (placed.some(p => Math.abs(p - px) < 27)) return;
+      if (placed.some(p => Math.abs(p - px) < 38)) return;
       placed.push(px);
-      const py = barY - 2 - (row % 2) * 8;
+      const py = barY - 3 - (row % 2) * 11;
       row++;
       const rgb = wavelengthToRGB(l.nm);
-      x.font = '7px "SFMono-Regular",Menlo,monospace';
+      x.font = '10px "SFMono-Regular",Menlo,monospace';
       x.textAlign = 'center';
       x.fillStyle = rgbCss(rgb.map(v => 0.55 + v * 0.45), 0.9);
       x.fillText(`${l.nm.toFixed(1)}`, px, py);
@@ -362,4 +423,29 @@ export class UI {
     if (label) document.getElementById('boot-step').textContent = label;
     if (p >= 1) setTimeout(() => document.getElementById('boot').classList.add('done'), 260);
   }
+}
+/* Rank elements for a query: Z number, symbol, Chinese or English name. */
+export function searchElements(q, limit = 8) {
+  const t = String(q || '').trim().toLowerCase();
+  if (!t) return [];
+  if (/^\d+$/.test(t)) {
+    const z = Number(t);
+    const exact = byZ[z] ? [byZ[z]] : [];
+    const more = ELEMENTS.filter(e => e.z !== z && String(e.z).startsWith(t));
+    return exact.concat(more).slice(0, limit);
+  }
+  const scored = [];
+  for (const e of ELEMENTS) {
+    const sym = e.sym.toLowerCase(), en = e.en.toLowerCase();
+    let s = -1;
+    if (sym === t) s = 0;
+    else if (e.zh === t) s = 0;
+    else if (en === t) s = 1;
+    else if (sym.startsWith(t)) s = 2;
+    else if (en.startsWith(t)) s = 3;
+    else if (e.zh.includes(t)) s = 4;
+    else if (en.includes(t)) s = 5;
+    if (s >= 0) scored.push([s, e]);
+  }
+  return scored.sort((a, b) => a[0] - b[0] || a[1].z - b[1].z).slice(0, limit).map(x => x[1]);
 }

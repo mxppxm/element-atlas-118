@@ -158,15 +158,21 @@ export class AtomBench {
     this.gantryMat.opacity = 0.13;
         this.scanDisc.material.color.copy(this.color);
 
+    const oldLabel = this.labelMesh.material.map;
     this.labelMesh.material.map = atomLabelTexture(el, `#${this.color.getHexString()}`);
     this.labelMesh.material.needsUpdate = true;
+    if (oldLabel && oldLabel !== this.labelMesh.material.map) oldLabel.dispose();
 
     // clear old atom
     const old = this.atom.children.slice();
     this.atom.clear();
     old.forEach(c => c.traverse?.(o => {
       if (o.geometry && !o.userData.sharedGeo) o.geometry.dispose();
-      if (o.material && o.material.map && o.material.map !== this._ptex) o.material.map.dispose?.();
+      const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+      mats.forEach(mt => {
+        if (mt.map && mt.map !== this._ptex) mt.map.dispose?.();
+        if (!mt.userData?.shared) mt.dispose?.();
+      });
     }));
     this.shells = [];
     this.spin = 0;

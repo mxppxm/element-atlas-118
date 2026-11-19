@@ -106,7 +106,6 @@ export class NeonLab {
     this.wall.setSelected(this.selected.z - 1);
     this.ui.setMode('periodic');
     this.ui.setLegend();
-    this.ui.setSpectrumPanelVisible(false);
     this.applyPose(this.poseFor('periodic'));
     this.wall.show(true);
     this.wall.group.visible = true;
